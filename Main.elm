@@ -2,7 +2,7 @@
 -- https://guide.elm-lang.org/architecture/user_input/forms.html
 
 
-module Main exposing (..)
+port module Main exposing (..)
 
 import Bootstrap.CDN as CDN
 import Bootstrap.Grid as Grid
@@ -15,10 +15,10 @@ import Time exposing (..)
 
 
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , view = view
-        , update = update
+        , update = updateWithStorage
         , subscriptions = subscriptions
         }
 
@@ -36,9 +36,9 @@ subscriptions model =
 -- INIT
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( model, Cmd.none )
+init : Maybe Model -> ( Model, Cmd Msg )
+init savedModel =
+    Maybe.withDefault model savedModel ! []
 
 
 
@@ -108,8 +108,9 @@ update msg model =
 
         Add ->
             ( model, Time.now |> Task.perform CurrentTime )
+
         Del ascent ->
-            ({model| ascents = List.filter (notAscent ascent) model.ascents}, Cmd.none)
+            ( { model | ascents = List.filter (notAscent ascent) model.ascents }, Cmd.none )
 
         CurrentTime time ->
             ( { model | ascents = Ascent model.grade time :: model.ascents }, Cmd.none )
@@ -118,6 +119,25 @@ update msg model =
 notAscent : Ascent -> Ascent -> Bool
 notAscent a b =
     a /= b
+
+
+port setStorage : Model -> Cmd msg
+
+
+{-| We want to `setStorage` on every update. This function adds the setStorage
+command for every step of the update function.
+-}
+updateWithStorage : Msg -> Model -> ( Model, Cmd Msg )
+updateWithStorage msg model =
+    let
+        ( newModel, cmds ) =
+            update msg model
+    in
+    ( newModel
+    , Cmd.batch [ setStorage newModel, cmds ]
+    )
+
+
 
 -- VIEW
 
@@ -131,12 +151,16 @@ view model =
             [ Grid.col []
                 [ select [ onInput Grade ] (List.map (\x -> option [] [ text x ]) model.gradeList)
                 , input [ type_ "button", value "Add", onClick Add ] []
-                , ul [] 
-                    (List.map (\x -> li [] [ 
-                        text (x.grade ++ " " ++ viewTime x.dateTime)
-                       , input [type_ "button", value "X", onClick (Del x) ] []
-                    ]) 
-                    model.ascents)
+                , ul []
+                    (List.map
+                        (\x ->
+                            li []
+                                [ text (x.grade ++ " " ++ viewTime x.dateTime)
+                                , input [ type_ "button", value "X", onClick (Del x) ] []
+                                ]
+                        )
+                        model.ascents
+                    )
                 ]
             ]
         ]
