@@ -7,6 +7,7 @@ port module Main exposing (..)
 import Bootstrap.CDN as CDN
 import Bootstrap.Grid as Grid
 import Date
+import Date.Distance as Distance
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
@@ -46,7 +47,8 @@ init savedModel =
 
 
 type alias Model =
-    { grade : String
+    { now : Time
+    , grade : String
     , ascents : List Ascent
     , gradeList : List String
     }
@@ -60,7 +62,8 @@ type alias Ascent =
 
 model : Model
 model =
-    Model ""
+    Model 0
+        "4"
         []
         [ "4"
         , "4+"
@@ -113,7 +116,7 @@ update msg model =
             ( { model | ascents = List.filter (notAscent ascent) model.ascents }, Cmd.none )
 
         CurrentTime time ->
-            ( { model | ascents = Ascent model.grade time :: model.ascents }, Cmd.none )
+            ( { model | ascents = Ascent model.grade time :: model.ascents, now = time }, Cmd.none )
 
 
 notAscent : Ascent -> Ascent -> Bool
@@ -155,7 +158,7 @@ view model =
                     (List.map
                         (\x ->
                             li []
-                                [ text (x.grade ++ " " ++ viewTime x.dateTime)
+                                [ text (x.grade ++ " " ++ Distance.inWords (Date.fromTime model.now) (Date.fromTime x.dateTime))
                                 , input [ type_ "button", value "X", onClick (Del x) ] []
                                 ]
                         )
