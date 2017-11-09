@@ -1,15 +1,19 @@
 <div id="main"></div>
 <script src="main.js"></script>
 <script>
-    var node = document.getElementById('main');
+    var node = document.getElementById('main')
 
-    var storedState = localStorage.getItem('elm-climblog-save');
+    var storedState = localStorage.getItem('elm-climblog-save')
 
-    var startingState = storedState ? JSON.parse(storedState) : null;
+    var startingState = storedState ? JSON.parse(storedState) : null
 
-    var app = Elm.Main.fullscreen(startingState);
+    try {
+        var app = Elm.Main.fullscreen(startingState)
+    } catch (e){
+        var app = Elm.Main.fullscreen(null)
+    }
 
     app.ports.setStorage.subscribe(function(state) {
-        localStorage.setItem('elm-climblog-save', JSON.stringify(state));
+        localStorage.setItem('elm-climblog-save', JSON.stringify(state))
     });
 </script>

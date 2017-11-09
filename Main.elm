@@ -4,17 +4,21 @@
 
 port module Main exposing (..)
 
+import Bootstrap.Button as Button
 import Bootstrap.CDN as CDN
 import Bootstrap.Grid as Grid
+import Bootstrap.ListGroup as ListGroup
 import Date
 import Date.Distance as Distance
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (property, style)
 import Html.Events exposing (onClick, onInput)
+import Json.Encode exposing (string)
 import Task exposing (..)
 import Time exposing (..)
 
 
+main : Program (Maybe Model) Model Msg
 main =
     Html.programWithFlags
         { init = init
@@ -112,11 +116,11 @@ update msg model =
         Add ->
             ( model, Time.now |> Task.perform CurrentTime )
 
-        Del ascent ->
-            ( { model | ascents = List.filter (notAscent ascent) model.ascents }, Cmd.none )
-
         CurrentTime time ->
             ( { model | ascents = Ascent model.grade time :: model.ascents, now = time }, Cmd.none )
+
+        Del ascent ->
+            ( { model | ascents = List.filter (notAscent ascent) model.ascents }, Cmd.none )
 
 
 notAscent : Ascent -> Ascent -> Bool
@@ -152,25 +156,36 @@ view model =
         , Grid.row [] [ Grid.col [] [ h1 [] [ text "Indoor Climbing Log" ] ] ]
         , Grid.row []
             [ Grid.col []
-                [ select [ onInput Grade ] (List.map (\x -> option [] [ text x ]) model.gradeList)
-                , input [ type_ "button", value "Add", onClick Add ] []
-                , ul []
-                    (List.map
-                        (\x ->
-                            li []
-                                [ text (x.grade ++ " " ++ Distance.inWords (Date.fromTime model.now) (Date.fromTime x.dateTime))
-                                , input [ type_ "button", value "X", onClick (Del x) ] []
-                                ]
-                        )
-                        model.ascents
-                    )
+                [ Grid.row []
+                    [ Grid.col []
+                        [ select [ onInput Grade ] (List.map (\x -> option [] [ text x ]) model.gradeList)
+                        , spacer
+                        , Button.button [ Button.primary, Button.onClick Add ] [ text "Add" ]
+                        ]
+                    ]
+                , Grid.row [] [ Grid.col [] [ p [] [] ] ]
+                , Grid.row []
+                    [ Grid.col []
+                        [ ListGroup.ul
+                            (List.map
+                                (\ascent ->
+                                    ListGroup.li []
+                                        [ span [ style [ ( "width", "3em" ) ] ] [ text ascent.grade ]
+                                        , spacer
+                                        , small [ style [ ( "width", "9em" ) ] ] [ text (Distance.inWords (Date.fromTime model.now) (Date.fromTime ascent.dateTime)) ]
+                                        , spacer
+                                        , Button.button [ Button.onClick (Del ascent) ] [ text "x" ]
+                                        ]
+                                )
+                                model.ascents
+                            )
+                        ]
+                    ]
                 ]
             ]
         ]
 
 
-viewTime : Time -> String
-viewTime time =
-    time
-        |> Date.fromTime
-        |> toString
+spacer : Html msg
+spacer =
+    span [ property "innerHTML" (string "&nbsp;&nbsp;") ] []
