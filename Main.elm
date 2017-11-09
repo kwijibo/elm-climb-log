@@ -10,6 +10,7 @@ import Bootstrap.Grid as Grid
 import Bootstrap.ListGroup as ListGroup
 import Date
 import Date.Distance as Distance
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (property, style)
 import Html.Events exposing (onClick, onInput)
@@ -50,11 +51,15 @@ init savedModel =
 -- MODEL
 
 
+type alias Grade =
+    String
+
+
 type alias Model =
     { now : Time
-    , grade : String
+    , grade : Grade
     , ascents : List Ascent
-    , gradeList : List String
+    , gradeList : List Grade
     }
 
 
@@ -151,6 +156,10 @@ updateWithStorage msg model =
 
 view : Model -> Html Msg
 view model =
+    let
+        counts =
+            countAscentsByGrade model.gradeList model.ascents
+    in
     Grid.container []
         [ CDN.stylesheet -- creates an inline style node with the Bootstrap CSS
         , Grid.row [] [ Grid.col [] [ h1 [] [ text "Indoor Climbing Log" ] ] ]
@@ -164,6 +173,25 @@ view model =
                         ]
                     ]
                 , Grid.row [] [ Grid.col [] [ p [] [] ] ]
+                , Grid.row []
+                    [ Grid.col []
+                        [ ListGroup.ul
+                            (List.map
+                                (\grade ->
+                                    let
+                                        gradeWidth =
+                                            (Dict.get grade counts |> Maybe.withDefault 0 |> toString) ++ "em"
+                                    in
+                                    ListGroup.li []
+                                        [ span [ style [ ( "width", "3em" ) ] ] [ text grade ]
+                                        , spacer
+                                        , div [ style [ ( "width", gradeWidth ), ( "background-color", "red" ), ( "height", "100%" ) ] ] []
+                                        ]
+                                )
+                                model.gradeList
+                            )
+                        ]
+                    ]
                 , Grid.row []
                     [ Grid.col []
                         [ ListGroup.ul
@@ -189,3 +217,13 @@ view model =
 spacer : Html msg
 spacer =
     span [ property "innerHTML" (string "&nbsp;&nbsp;") ] []
+
+
+countAscentsByGrade : List Grade -> List Ascent -> Dict.Dict Grade Int
+countAscentsByGrade grades ascents =
+    List.foldl (\ascent counts -> Dict.update ascent.grade incWithZero counts) Dict.empty ascents
+
+
+incWithZero : Maybe number -> Maybe number
+incWithZero =
+    \n -> Maybe.withDefault 0 n + 1 |> Maybe.Just

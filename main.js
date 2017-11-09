@@ -12886,6 +12886,21 @@ var _rundis$elm_bootstrap$Bootstrap_Grid$col = F2(
 			{options: options, children: children});
 	});
 
+var _user$project$Main$incWithZero = function (n) {
+	return _elm_lang$core$Maybe$Just(
+		A2(_elm_lang$core$Maybe$withDefault, 0, n) + 1);
+};
+var _user$project$Main$countAscentsByGrade = F2(
+	function (grades, ascents) {
+		return A3(
+			_elm_lang$core$List$foldl,
+			F2(
+				function (ascent, counts) {
+					return A3(_elm_lang$core$Dict$update, ascent.grade, _user$project$Main$incWithZero, counts);
+				}),
+			_elm_lang$core$Dict$empty,
+			ascents);
+	});
 var _user$project$Main$spacer = A2(
 	_elm_lang$html$Html$span,
 	{
@@ -13057,20 +13072,7 @@ var _user$project$Main$update = F2(
 					_0: model,
 					_1: A2(_elm_lang$core$Task$perform, _user$project$Main$CurrentTime, _elm_lang$core$Time$now)
 				};
-			case 'Del':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							ascents: A2(
-								_elm_lang$core$List$filter,
-								_user$project$Main$notAscent(_p0._0),
-								model.ascents)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			default:
+			case 'CurrentTime':
 				var _p1 = _p0._0;
 				return {
 					ctor: '_Tuple2',
@@ -13083,6 +13085,19 @@ var _user$project$Main$update = F2(
 								_1: model.ascents
 							},
 							now: _p1
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							ascents: A2(
+								_elm_lang$core$List$filter,
+								_user$project$Main$notAscent(_p0._0),
+								model.ascents)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -13116,6 +13131,7 @@ var _user$project$Main$Grade = function (a) {
 	return {ctor: 'Grade', _0: a};
 };
 var _user$project$Main$view = function (model) {
+	var counts = A2(_user$project$Main$countAscentsByGrade, model.gradeList, model.ascents);
 	return A2(
 		_rundis$elm_bootstrap$Bootstrap_Grid$container,
 		{ctor: '[]'},
@@ -13250,7 +13266,15 @@ var _user$project$Main$view = function (model) {
 															_0: _rundis$elm_bootstrap$Bootstrap_ListGroup$ul(
 																A2(
 																	_elm_lang$core$List$map,
-																	function (ascent) {
+																	function (grade) {
+																		var gradeWidth = A2(
+																			_elm_lang$core$Basics_ops['++'],
+																			_elm_lang$core$Basics$toString(
+																				A2(
+																					_elm_lang$core$Maybe$withDefault,
+																					0,
+																					A2(_elm_lang$core$Dict$get, grade, counts))),
+																			'em');
 																		return A2(
 																			_rundis$elm_bootstrap$Bootstrap_ListGroup$li,
 																			{ctor: '[]'},
@@ -13270,7 +13294,7 @@ var _user$project$Main$view = function (model) {
 																					},
 																					{
 																						ctor: '::',
-																						_0: _elm_lang$html$Html$text(ascent.grade),
+																						_0: _elm_lang$html$Html$text(grade),
 																						_1: {ctor: '[]'}
 																					}),
 																				_1: {
@@ -13279,57 +13303,132 @@ var _user$project$Main$view = function (model) {
 																					_1: {
 																						ctor: '::',
 																						_0: A2(
-																							_elm_lang$html$Html$small,
+																							_elm_lang$html$Html$div,
 																							{
 																								ctor: '::',
 																								_0: _elm_lang$html$Html_Attributes$style(
 																									{
 																										ctor: '::',
-																										_0: {ctor: '_Tuple2', _0: 'width', _1: '9em'},
-																										_1: {ctor: '[]'}
+																										_0: {ctor: '_Tuple2', _0: 'width', _1: gradeWidth},
+																										_1: {
+																											ctor: '::',
+																											_0: {ctor: '_Tuple2', _0: 'background-color', _1: 'red'},
+																											_1: {
+																												ctor: '::',
+																												_0: {ctor: '_Tuple2', _0: 'height', _1: '100%'},
+																												_1: {ctor: '[]'}
+																											}
+																										}
 																									}),
 																								_1: {ctor: '[]'}
 																							},
-																							{
-																								ctor: '::',
-																								_0: _elm_lang$html$Html$text(
-																									A2(
-																										_alpacaaa$elm_date_distance$Date_Distance$inWords,
-																										_elm_lang$core$Date$fromTime(model.now),
-																										_elm_lang$core$Date$fromTime(ascent.dateTime))),
-																								_1: {ctor: '[]'}
-																							}),
-																						_1: {
-																							ctor: '::',
-																							_0: _user$project$Main$spacer,
-																							_1: {
-																								ctor: '::',
-																								_0: A2(
-																									_rundis$elm_bootstrap$Bootstrap_Button$button,
-																									{
-																										ctor: '::',
-																										_0: _rundis$elm_bootstrap$Bootstrap_Button$onClick(
-																											_user$project$Main$Del(ascent)),
-																										_1: {ctor: '[]'}
-																									},
-																									{
-																										ctor: '::',
-																										_0: _elm_lang$html$Html$text('x'),
-																										_1: {ctor: '[]'}
-																									}),
-																								_1: {ctor: '[]'}
-																							}
-																						}
+																							{ctor: '[]'}),
+																						_1: {ctor: '[]'}
 																					}
 																				}
 																			});
 																	},
-																	model.ascents)),
+																	model.gradeList)),
 															_1: {ctor: '[]'}
 														}),
 													_1: {ctor: '[]'}
 												}),
-											_1: {ctor: '[]'}
+											_1: {
+												ctor: '::',
+												_0: A2(
+													_rundis$elm_bootstrap$Bootstrap_Grid$row,
+													{ctor: '[]'},
+													{
+														ctor: '::',
+														_0: A2(
+															_rundis$elm_bootstrap$Bootstrap_Grid$col,
+															{ctor: '[]'},
+															{
+																ctor: '::',
+																_0: _rundis$elm_bootstrap$Bootstrap_ListGroup$ul(
+																	A2(
+																		_elm_lang$core$List$map,
+																		function (ascent) {
+																			return A2(
+																				_rundis$elm_bootstrap$Bootstrap_ListGroup$li,
+																				{ctor: '[]'},
+																				{
+																					ctor: '::',
+																					_0: A2(
+																						_elm_lang$html$Html$span,
+																						{
+																							ctor: '::',
+																							_0: _elm_lang$html$Html_Attributes$style(
+																								{
+																									ctor: '::',
+																									_0: {ctor: '_Tuple2', _0: 'width', _1: '3em'},
+																									_1: {ctor: '[]'}
+																								}),
+																							_1: {ctor: '[]'}
+																						},
+																						{
+																							ctor: '::',
+																							_0: _elm_lang$html$Html$text(ascent.grade),
+																							_1: {ctor: '[]'}
+																						}),
+																					_1: {
+																						ctor: '::',
+																						_0: _user$project$Main$spacer,
+																						_1: {
+																							ctor: '::',
+																							_0: A2(
+																								_elm_lang$html$Html$small,
+																								{
+																									ctor: '::',
+																									_0: _elm_lang$html$Html_Attributes$style(
+																										{
+																											ctor: '::',
+																											_0: {ctor: '_Tuple2', _0: 'width', _1: '9em'},
+																											_1: {ctor: '[]'}
+																										}),
+																									_1: {ctor: '[]'}
+																								},
+																								{
+																									ctor: '::',
+																									_0: _elm_lang$html$Html$text(
+																										A2(
+																											_alpacaaa$elm_date_distance$Date_Distance$inWords,
+																											_elm_lang$core$Date$fromTime(model.now),
+																											_elm_lang$core$Date$fromTime(ascent.dateTime))),
+																									_1: {ctor: '[]'}
+																								}),
+																							_1: {
+																								ctor: '::',
+																								_0: _user$project$Main$spacer,
+																								_1: {
+																									ctor: '::',
+																									_0: A2(
+																										_rundis$elm_bootstrap$Bootstrap_Button$button,
+																										{
+																											ctor: '::',
+																											_0: _rundis$elm_bootstrap$Bootstrap_Button$onClick(
+																												_user$project$Main$Del(ascent)),
+																											_1: {ctor: '[]'}
+																										},
+																										{
+																											ctor: '::',
+																											_0: _elm_lang$html$Html$text('x'),
+																											_1: {ctor: '[]'}
+																										}),
+																									_1: {ctor: '[]'}
+																								}
+																							}
+																						}
+																					}
+																				});
+																		},
+																		model.ascents)),
+																_1: {ctor: '[]'}
+															}),
+														_1: {ctor: '[]'}
+													}),
+												_1: {ctor: '[]'}
+											}
 										}
 									}
 								}),
