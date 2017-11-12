@@ -13,8 +13,8 @@ import Date.Distance as Distance
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (property, style)
-import Html.Events exposing (onClick, onInput)
 import Json.Encode exposing (string)
+import Set
 import Task exposing (..)
 import Time exposing (..)
 
@@ -57,14 +57,13 @@ type alias Grade =
 
 type alias Model =
     { now : Time
-    , grade : Grade
     , ascents : List Ascent
     , gradeList : List Grade
     }
 
 
 type alias Ascent =
-    { grade : String
+    { grade : Grade
     , dateTime : Time
     }
 
@@ -72,7 +71,6 @@ type alias Ascent =
 model : Model
 model =
     Model 0
-        "4"
         []
         [ "4"
         , "4+"
@@ -87,17 +85,9 @@ model =
         , "7a"
         , "7a+"
         , "7b"
-        , "7b"
         , "7b+"
         , "7c"
         , "7c+"
-        , "8a"
-        , "8a+"
-        , "8b"
-        , "8b"
-        , "8b+"
-        , "8c"
-        , "8c+"
         ]
 
 
@@ -106,23 +96,19 @@ model =
 
 
 type Msg
-    = Grade String
-    | Add
+    = Add Grade
     | Del Ascent
-    | CurrentTime Time
+    | TimeStampAscent Grade Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Grade grade ->
-            ( { model | grade = grade }, Cmd.none )
+        Add grade ->
+            ( model, Time.now |> Task.perform (TimeStampAscent grade) )
 
-        Add ->
-            ( model, Time.now |> Task.perform CurrentTime )
-
-        CurrentTime time ->
-            ( { model | ascents = Ascent model.grade time :: model.ascents, now = time }, Cmd.none )
+        TimeStampAscent grade time ->
+            ( { model | ascents = Ascent grade time :: model.ascents, now = time }, Cmd.none )
 
         Del ascent ->
             ( { model | ascents = List.filter (notAscent ascent) model.ascents }, Cmd.none )
@@ -162,36 +148,34 @@ view model =
     in
     Grid.container []
         [ CDN.stylesheet -- creates an inline style node with the Bootstrap CSS
-        , Grid.row [] [ Grid.col [] [ h1 [] [ text "Indoor Climbing Log" ] ] ]
+        , Grid.row [] [ Grid.col [] [ h1 [] [ text "Sport Climbing Pyramid" ] ] ]
         , Grid.row []
             [ Grid.col []
                 [ Grid.row []
                     [ Grid.col []
-                        [ select [ onInput Grade ] (List.map (\x -> option [] [ text x ]) model.gradeList)
-                        , spacer
-                        , Button.button [ Button.primary, Button.onClick Add ] [ text "Add" ]
-                        ]
-                    ]
-                , Grid.row [] [ Grid.col [] [ p [] [] ] ]
-                , Grid.row []
-                    [ Grid.col []
                         [ ListGroup.ul
-                            (List.map
-                                (\grade ->
-                                    let
-                                        gradeWidth =
-                                            (Dict.get grade counts |> Maybe.withDefault 0 |> toString) ++ "em"
-                                    in
-                                    ListGroup.li []
-                                        [ span [ style [ ( "width", "3em" ) ] ] [ text grade ]
-                                        , spacer
-                                        , div [ style [ ( "width", gradeWidth ), ( "background-color", "red" ), ( "height", "100%" ) ] ] []
-                                        ]
-                                )
-                                model.gradeList
+                            (model.gradeList
+                                |> List.take
+                                    (1
+                                        + countDistinct (List.map .grade model.ascents)
+                                    )
+                                |> List.reverse
+                                |> List.map
+                                    (\grade ->
+                                        let
+                                            gradeWidth =
+                                                (Dict.get grade counts |> Maybe.withDefault 0 |> toString) ++ "em"
+                                        in
+                                        ListGroup.li []
+                                            [ Button.button [ Button.onClick (Add grade) ] [ text grade ]
+                                            , spacer
+                                            , div [ style [ ( "width", gradeWidth ), ( "background-color", "coral" ), ( "height", "3em" ), ( "margin-left", "auto" ), ( "margin-right", "auto" ) ] ] []
+                                            ]
+                                    )
                             )
                         ]
                     ]
+                , Grid.row [] [ Grid.col [] [ h2 [] [ text "Log" ] ] ]
                 , Grid.row []
                     [ Grid.col []
                         [ ListGroup.ul
@@ -227,3 +211,8 @@ countAscentsByGrade grades ascents =
 incWithZero : Maybe number -> Maybe number
 incWithZero =
     \n -> Maybe.withDefault 0 n + 1 |> Maybe.Just
+
+
+countDistinct : List comparable -> Int
+countDistinct xs =
+    xs |> Set.fromList |> Set.size
