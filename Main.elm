@@ -2,18 +2,14 @@
 -- https://guide.elm-lang.org/architecture/user_input/forms.html
 
 
-port module Main exposing (..)
+port module Main exposing (main)
 
 import Bootstrap.Button as Button
 import Bootstrap.CDN as CDN
 import Bootstrap.Grid as Grid
-import Bootstrap.ListGroup as ListGroup
-import Date
-import Date.Distance as Distance
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (property, style)
-import Json.Encode exposing (string)
 import Set
 import Task exposing (..)
 import Time exposing (..)
@@ -52,13 +48,12 @@ init savedModel =
 
 
 type alias Grade =
-    String
+    { name : String, color : String }
 
 
 type alias Model =
     { now : Time
     , ascents : List Ascent
-    , gradeList : List Grade
     }
 
 
@@ -72,23 +67,28 @@ model : Model
 model =
     Model 0
         []
-        [ "4"
-        , "4+"
-        , "5"
-        , "5+"
-        , "6a"
-        , "6a+"
-        , "6b"
-        , "6b+"
-        , "6c"
-        , "6c+"
-        , "7a"
-        , "7a+"
-        , "7b"
-        , "7b+"
-        , "7c"
-        , "7c+"
-        ]
+
+
+gradeList : List Grade
+gradeList =
+    [ Grade "4" "SpringGreen"
+    , Grade "4+" "Turquoise"
+    , Grade "5" "Aqua"
+    , Grade "5+" "SteelBlue"
+    , Grade "6a" "Olive"
+    , Grade "6a+" "Wheat"
+    , Grade "6b" "Lime"
+    , Grade "6b+" "Violet"
+    , Grade "6c" "Orange"
+    , Grade "6c+" "Red"
+    , Grade "7a" "Maroon"
+    , Grade "7a+" "Fuchsia"
+    , Grade "7b" "Teal"
+    , Grade "7b+" "Tomato"
+    , Grade "7c" "Gray"
+    , Grade "7c+" "Thistle"
+    , Grade "8a" "Tan"
+    ]
 
 
 
@@ -97,7 +97,6 @@ model =
 
 type Msg
     = Add Grade
-    | Del Ascent
     | TimeStampAscent Grade Time
 
 
@@ -109,9 +108,6 @@ update msg model =
 
         TimeStampAscent grade time ->
             ( { model | ascents = Ascent grade time :: model.ascents, now = time }, Cmd.none )
-
-        Del ascent ->
-            ( { model | ascents = List.filter (notAscent ascent) model.ascents }, Cmd.none )
 
 
 notAscent : Ascent -> Ascent -> Bool
@@ -144,68 +140,59 @@ view : Model -> Html Msg
 view model =
     let
         counts =
-            countAscentsByGrade model.gradeList model.ascents
+            countAscentsByGrade model.ascents
+
+        maxNum =
+            maxValue counts
     in
     Grid.container []
         [ CDN.stylesheet -- creates an inline style node with the Bootstrap CSS
         , Grid.row [] [ Grid.col [] [ h1 [] [ text "Sport Climbing Pyramid" ] ] ]
-        , Grid.row []
-            [ Grid.col []
-                [ Grid.row []
-                    [ Grid.col []
-                        [ ListGroup.ul
-                            (model.gradeList
-                                |> List.take
-                                    (1
-                                        + countDistinct (List.map .grade model.ascents)
-                                    )
-                                |> List.reverse
-                                |> List.map
-                                    (\grade ->
-                                        let
-                                            gradeWidth =
-                                                (Dict.get grade counts |> Maybe.withDefault 0 |> toString) ++ "em"
-                                        in
-                                        ListGroup.li []
-                                            [ Button.button [ Button.onClick (Add grade) ] [ text grade ]
-                                            , spacer
-                                            , div [ style [ ( "width", gradeWidth ), ( "background-color", "coral" ), ( "height", "3em" ), ( "margin-left", "auto" ), ( "margin-right", "auto" ) ] ] []
-                                            ]
-                                    )
-                            )
-                        ]
-                    ]
-                , Grid.row [] [ Grid.col [] [ h2 [] [ text "Log" ] ] ]
-                , Grid.row []
-                    [ Grid.col []
-                        [ ListGroup.ul
-                            (List.map
-                                (\ascent ->
-                                    ListGroup.li []
-                                        [ span [ style [ ( "width", "3em" ) ] ] [ text ascent.grade ]
-                                        , spacer
-                                        , small [ style [ ( "width", "9em" ) ] ] [ text (Distance.inWords (Date.fromTime model.now) (Date.fromTime ascent.dateTime)) ]
-                                        , spacer
-                                        , Button.button [ Button.onClick (Del ascent) ] [ text "x" ]
-                                        ]
-                                )
-                                model.ascents
-                            )
-                        ]
-                    ]
-                ]
-            ]
+        , table []
+            (gradeList
+                |> List.take
+                    (1
+                        + countDistinct (List.map (.grade >> .name) model.ascents)
+                    )
+                |> List.reverse
+                |> List.map
+                    (\grade ->
+                        tr []
+                            [ td [] [ Button.button [ Button.onClick (Add grade) ] [ text grade.name ] ]
+                            , td [] [ makeBar (gradeWidth grade.name counts maxNum) grade.color ]
+                            ]
+                    )
+            )
         ]
 
 
-spacer : Html msg
-spacer =
-    span [ property "innerHTML" (string "&nbsp;&nbsp;") ] []
+makeBar : String -> String -> Html msg
+makeBar width color =
+    div [ style [ ( "width", "200px" ) ] ]
+        [ div
+            [ style
+                [ ( "opacity", "0.8" )
+                , ( "width", width )
+                , ( "background-color", color )
+                , ( "height", "2.5em" )
+                , ( "margin-top", "1px" )
+                , ( "margin-bottom", "1px" )
+                , ( "margin-left", "auto" )
+                , ( "margin-right", "auto" )
+                ]
+            ]
+            []
+        ]
 
 
-countAscentsByGrade : List Grade -> List Ascent -> Dict.Dict Grade Int
-countAscentsByGrade grades ascents =
-    List.foldl (\ascent counts -> Dict.update ascent.grade incWithZero counts) Dict.empty ascents
+gradeWidth : comparable -> Dict.Dict comparable Int -> Float -> String
+gradeWidth key dict maxNum =
+    (Dict.get key dict |> Maybe.withDefault 0 |> toFloat) / maxNum |> (*) 100 |> toString |> (\p -> p ++ "%")
+
+
+countAscentsByGrade : List Ascent -> Dict.Dict String Int
+countAscentsByGrade ascents =
+    List.foldl (\ascent counts -> Dict.update ascent.grade.name incWithZero counts) Dict.empty ascents
 
 
 incWithZero : Maybe number -> Maybe number
@@ -216,3 +203,11 @@ incWithZero =
 countDistinct : List comparable -> Int
 countDistinct xs =
     xs |> Set.fromList |> Set.size
+
+
+maxValue : Dict.Dict String Int -> Float
+maxValue counts =
+    counts
+        |> Dict.values
+        |> List.foldl max 0
+        |> toFloat
