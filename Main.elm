@@ -9,7 +9,7 @@ import Bootstrap.CDN as CDN
 import Bootstrap.Grid as Grid
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (property, style)
+import Html.Attributes exposing (property, style, title)
 import Set
 import Task exposing (..)
 import Time exposing (..)
@@ -158,30 +158,40 @@ view model =
                 |> List.map
                     (\grade ->
                         tr []
-                            [ td [] [ Button.button [ Button.onClick (Add grade) ] [ text grade.name ] ]
-                            , td [] [ makeBar (gradeWidth grade.name counts maxNum) grade.color ]
+                            [ td [] [ Button.button [ Button.onClick (Add grade), Button.attrs [ style [ ( "width", "3.25em" ) ] ] ] [ text grade.name ] ]
+                            , td []
+                                [ makeBar
+                                    (gradeWidth grade.name counts maxNum)
+                                    grade.color
+                                    (Dict.get grade.name counts |> Maybe.withDefault 0)
+                                ]
                             ]
                     )
             )
         ]
 
 
-makeBar : String -> String -> Html msg
-makeBar width color =
+makeBar : String -> String -> Int -> Html msg
+makeBar width color numAscents =
     div [ style [ ( "width", "200px" ) ] ]
         [ div
             [ style
                 [ ( "opacity", "0.8" )
+                , ( "border-radius", "2px" )
                 , ( "width", width )
+                , ( "color", "White" )
                 , ( "background-color", color )
                 , ( "height", "2.5em" )
                 , ( "margin-top", "1px" )
                 , ( "margin-bottom", "1px" )
                 , ( "margin-left", "auto" )
                 , ( "margin-right", "auto" )
+                , ( "text-align", "center" )
+                , ( "padding", "0.5em" )
                 ]
+            , title (toString numAscents ++ " ascents")
             ]
-            []
+            [ text (toString numAscents) ]
         ]
 
 

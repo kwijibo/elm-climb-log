@@ -10684,8 +10684,8 @@ var _user$project$Main$gradeWidth = F3(
 							0,
 							A2(_elm_lang$core$Dict$get, key, dict))) / maxNum)));
 	});
-var _user$project$Main$makeBar = F2(
-	function (width, color) {
+var _user$project$Main$makeBar = F3(
+	function (width, color, numAscents) {
 		return A2(
 			_elm_lang$html$Html$div,
 			{
@@ -10710,26 +10710,42 @@ var _user$project$Main$makeBar = F2(
 								_0: {ctor: '_Tuple2', _0: 'opacity', _1: '0.8'},
 								_1: {
 									ctor: '::',
-									_0: {ctor: '_Tuple2', _0: 'width', _1: width},
+									_0: {ctor: '_Tuple2', _0: 'border-radius', _1: '2px'},
 									_1: {
 										ctor: '::',
-										_0: {ctor: '_Tuple2', _0: 'background-color', _1: color},
+										_0: {ctor: '_Tuple2', _0: 'width', _1: width},
 										_1: {
 											ctor: '::',
-											_0: {ctor: '_Tuple2', _0: 'height', _1: '2.5em'},
+											_0: {ctor: '_Tuple2', _0: 'color', _1: 'White'},
 											_1: {
 												ctor: '::',
-												_0: {ctor: '_Tuple2', _0: 'margin-top', _1: '1px'},
+												_0: {ctor: '_Tuple2', _0: 'background-color', _1: color},
 												_1: {
 													ctor: '::',
-													_0: {ctor: '_Tuple2', _0: 'margin-bottom', _1: '1px'},
+													_0: {ctor: '_Tuple2', _0: 'height', _1: '2.5em'},
 													_1: {
 														ctor: '::',
-														_0: {ctor: '_Tuple2', _0: 'margin-left', _1: 'auto'},
+														_0: {ctor: '_Tuple2', _0: 'margin-top', _1: '1px'},
 														_1: {
 															ctor: '::',
-															_0: {ctor: '_Tuple2', _0: 'margin-right', _1: 'auto'},
-															_1: {ctor: '[]'}
+															_0: {ctor: '_Tuple2', _0: 'margin-bottom', _1: '1px'},
+															_1: {
+																ctor: '::',
+																_0: {ctor: '_Tuple2', _0: 'margin-left', _1: 'auto'},
+																_1: {
+																	ctor: '::',
+																	_0: {ctor: '_Tuple2', _0: 'margin-right', _1: 'auto'},
+																	_1: {
+																		ctor: '::',
+																		_0: {ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
+																		_1: {
+																			ctor: '::',
+																			_0: {ctor: '_Tuple2', _0: 'padding', _1: '0.5em'},
+																			_1: {ctor: '[]'}
+																		}
+																	}
+																}
+															}
 														}
 													}
 												}
@@ -10738,9 +10754,22 @@ var _user$project$Main$makeBar = F2(
 									}
 								}
 							}),
-						_1: {ctor: '[]'}
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$title(
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									_elm_lang$core$Basics$toString(numAscents),
+									' ascents')),
+							_1: {ctor: '[]'}
+						}
 					},
-					{ctor: '[]'}),
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(
+							_elm_lang$core$Basics$toString(numAscents)),
+						_1: {ctor: '[]'}
+					}),
 				_1: {ctor: '[]'}
 			});
 	});
@@ -10970,7 +10999,21 @@ var _user$project$Main$view = function (model) {
 														ctor: '::',
 														_0: _rundis$elm_bootstrap$Bootstrap_Button$onClick(
 															_user$project$Main$Add(grade)),
-														_1: {ctor: '[]'}
+														_1: {
+															ctor: '::',
+															_0: _rundis$elm_bootstrap$Bootstrap_Button$attrs(
+																{
+																	ctor: '::',
+																	_0: _elm_lang$html$Html_Attributes$style(
+																		{
+																			ctor: '::',
+																			_0: {ctor: '_Tuple2', _0: 'width', _1: '3.25em'},
+																			_1: {ctor: '[]'}
+																		}),
+																	_1: {ctor: '[]'}
+																}),
+															_1: {ctor: '[]'}
+														}
 													},
 													{
 														ctor: '::',
@@ -10986,10 +11029,14 @@ var _user$project$Main$view = function (model) {
 												{ctor: '[]'},
 												{
 													ctor: '::',
-													_0: A2(
+													_0: A3(
 														_user$project$Main$makeBar,
 														A3(_user$project$Main$gradeWidth, grade.name, counts, maxNum),
-														grade.color),
+														grade.color,
+														A2(
+															_elm_lang$core$Maybe$withDefault,
+															0,
+															A2(_elm_lang$core$Dict$get, grade.name, counts))),
 													_1: {ctor: '[]'}
 												}),
 											_1: {ctor: '[]'}
