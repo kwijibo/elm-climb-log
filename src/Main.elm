@@ -10,6 +10,8 @@ import Bootstrap.Grid as Grid
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (property, style, title)
+import Html.Events exposing (onClick)
+import Icon exposing (delete)
 import Set
 import Task exposing (..)
 import Time exposing (..)
@@ -98,6 +100,7 @@ gradeList =
 type Msg
     = Add Grade
     | TimeStampAscent Grade Time
+    | Del Grade
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -108,6 +111,35 @@ update msg model =
 
         TimeStampAscent grade time ->
             ( { model | ascents = Ascent grade time :: model.ascents, now = time }, Cmd.none )
+
+        Del grade ->
+            ( { model
+                | ascents = withoutLatest grade model.ascents
+              }
+            , Cmd.none
+            )
+
+
+withoutLatest grade ascents =
+    let
+        maybeLatest =
+            getLatestByGrade grade ascents
+    in
+    Maybe.map
+        (\latest ->
+            List.filter
+                (\ascent -> ascent /= latest)
+                ascents
+        )
+        maybeLatest
+        |> Maybe.withDefault ascents
+
+
+getLatestByGrade grade ascents =
+    ascents
+        |> List.filter (\ascent -> ascent.grade == grade)
+        |> List.sortBy .dateTime
+        |> List.head
 
 
 notAscent : Ascent -> Ascent -> Bool
@@ -147,23 +179,33 @@ view model =
     in
     Grid.container []
         [ CDN.stylesheet -- creates an inline style node with the Bootstrap CSS
-        , Grid.row [] [ Grid.col [] [ h1 [] [ text "Sport Climbing Pyramid" ] ] ]
+        , Grid.row [] [ Grid.col [] [ h4 [ style [ ( "color", "SteelBlue" ) ] ] [ text "Sport Climbing Pyramid" ] ] ]
         , table []
             (gradeList
                 |> List.take
-                    (1
-                        + countDistinct (List.map (.grade >> .name) model.ascents)
+                    (3
+                        + max 3 (countDistinct (model.ascents |> List.map (.grade >> .name)))
                     )
                 |> List.reverse
                 |> List.map
                     (\grade ->
+                        let
+                            numAscents =
+                                Dict.get grade.name counts |> Maybe.withDefault 0
+                        in
                         tr []
                             [ td [] [ Button.button [ Button.onClick (Add grade), Button.attrs [ style [ ( "width", "3.25em" ) ] ] ] [ text grade.name ] ]
                             , td []
                                 [ makeBar
                                     (gradeWidth grade.name counts maxNum)
                                     grade.color
-                                    (Dict.get grade.name counts |> Maybe.withDefault 0)
+                                    numAscents
+                                ]
+                            , td []
+                                [ if numAscents > 0 then
+                                    Button.button [ Button.onClick (Del grade) ] [ delete ]
+                                  else
+                                    span [] []
                                 ]
                             ]
                     )
@@ -177,7 +219,7 @@ makeBar width color numAscents =
         [ div
             [ style
                 [ ( "opacity", "0.8" )
-                , ( "border-radius", "2px" )
+                , ( "border-radius", "2.5px" )
                 , ( "width", width )
                 , ( "color", "White" )
                 , ( "background-color", color )
@@ -187,12 +229,33 @@ makeBar width color numAscents =
                 , ( "margin-left", "auto" )
                 , ( "margin-right", "auto" )
                 , ( "text-align", "center" )
-                , ( "padding", "0.5em" )
+                , ( "padding", overZero numAscents "0.5em" "0" )
                 ]
             , title (toString numAscents ++ " ascents")
             ]
-            [ text (toString numAscents) ]
+            [ text (overZero numAscents (toString numAscents) "")
+            ]
         ]
+
+
+floatRight : Html msg -> Html msg
+floatRight el =
+    div
+        [ style
+            [ ( "float", "right" )
+            , ( "clear", "both" )
+            , ( "margin-right", "-3em" )
+            ]
+        ]
+        [ el ]
+
+
+overZero : Int -> String -> String -> String
+overZero n val fallback =
+    if n > 0 then
+        val
+    else
+        fallback
 
 
 gradeWidth : comparable -> Dict.Dict comparable Int -> Float -> String

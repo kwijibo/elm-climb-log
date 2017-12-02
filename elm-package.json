@@ -4,13 +4,14 @@
     "repository": "https://github.com/user/project.git",
     "license": "BSD3",
     "source-directories": [
-        "."
+        "src/"
     ],
     "exposed-modules": [],
     "dependencies": {
         "alpacaaa/elm-date-distance": "1.1.0 <= v < 2.0.0",
         "elm-lang/core": "5.1.1 <= v < 6.0.0",
         "elm-lang/html": "2.0.0 <= v < 3.0.0",
+        "elm-lang/svg": "2.0.0 <= v < 3.0.0",
         "rtfeldman/elm-css": "12.0.0 <= v < 13.0.0",
         "rundis/elm-bootstrap": "3.0.0 <= v < 4.0.0"
     },
